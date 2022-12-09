@@ -24,7 +24,8 @@ def threaded_node(connection,address):
     while True:
         if len(instructions[address].taskQueue):
             task = instructions[address].taskQueue[0]
-            print(f"Task {task} received from client {address}")
+            instructions[address].taskQueue.pop(0)
+            print(f"Task {task} received at node {address}")
             connection.sendall(str.encode("CALCULATE "+str(task.count)+"\n"))
             data = connection.recv(1024*task.count).decode()
             print(data)
@@ -61,7 +62,6 @@ def threaded_client(connection,address):
                 pass
             for prime in task.returnList:
                 primes.append(prime)
-            instructions[address].taskQueue.pop(0)
         connection.sendall(str.encode(str(primes)))
     connection.close()
 

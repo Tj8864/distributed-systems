@@ -1,5 +1,6 @@
 import socket
-from compute import runCompute, findPrimes
+import random
+from compute import findPrimes
 from time import sleep
 
 def node():
