@@ -10,13 +10,17 @@ def client():
     clientSocket.send("CLIENT".encode())
     
     while True:
-        print("Enter the required number of primes or QUIT if you want to leave: ")
-        ip = input()
-        if(ip == "QUIT"):
+        try:
+            print("Enter the required number of primes or QUIT if you want to leave: ")
+            ip = input()
+            if(ip == "QUIT"):
+                clientSocket.send(ip.encode())
+                break
             clientSocket.send(ip.encode())
+            print("Data recieved from prime server: " + clientSocket.recv(1024*int(ip)).decode())
+        except KeyboardInterrupt:
+            clientSocket.send("QUIT".encode())
             break
-        clientSocket.send(ip.encode())
-        print("Data recieved from prime server: " + clientSocket.recv(1024*int(ip)).decode())
         
     
     

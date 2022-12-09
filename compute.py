@@ -34,10 +34,13 @@ def millerRabin(candidate):
 
 def findPrimes(primeCount):
     primes = []
+    tries = 0
     while len(primes) < primeCount:
+        tries += 1
         candidate = nBitRandom(256)
         if millerRabin(candidate):
             primes.append(candidate)
+    print(f"Generated {primeCount} primes in {tries} tries")
     return primes
 
 if __name__ == "__main__":

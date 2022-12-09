@@ -10,45 +10,61 @@ clientConnections = {}
 
 def surveyNodes():
     aliveCount = 0
+    burned = []
     for address in instructions.keys():
         nodeConnections[address].sendall("SURVERY".encode())
         data = nodeConnections[address].recv(2048).decode()
         if data == "ALIVE":
             aliveCount += 1
         else:
-            instructions.pop(address)
-            nodeConnections.pop(address)
+            burned.append(address)
+    for address in burned:
+        instructions.pop(address)
+        nodeConnections.pop(address)
     return aliveCount
 
 def threaded_node(connection,address):
     while True:
-        if len(instructions[address].taskQueue):
-            task = instructions[address].taskQueue[0]
-            instructions[address].taskQueue.pop(0)
-            print(f"Task {task} received at node {address}")
-            connection.sendall(str.encode("CALCULATE "+str(task.count)+"\n"))
-            data = connection.recv(1024*task.count).decode()
-            print(data)
-            if(data == "QUIT"):
+        try:
+            if not address in instructions:
                 print(f"Connection with node {address} closed on receiving QUIT")
                 break
-            else:
-                print("Gonna listEval: " + data)
-                for prime in listEval(data):
-                    task.returnList.append(prime)
-                print(f"Task {task} completed by node {address}")
+            if len(instructions[address].taskQueue):
+                task = instructions[address].taskQueue[0]
+                instructions[address].taskQueue.pop(0)
+                print(f"Task, count {task.count} sending to node {address}")
+                connection.sendall(str.encode("CALCULATE "+str(task.count)+"\n"))
+                data = connection.recv(2048*task.count).decode()
+                print(f"Received result from {address}: "+data)
+                if(data == "QUIT"):
+                    instructions.pop(address)
+                    nodeConnections.pop(address)
+                    print(f"Connection with node {address} closed on receiving QUIT")
+                    break
+                else:
+                    for prime in listEval(data):
+                        task.returnList.append(prime)
+                    print(f"Task {task} completed by node {address}")
+        except ConnectionError:
+            print(f"Connection with node {address} closed on connection error")
+            break
+        except KeyError:
+            print(f"Connection with node {address} closed on receiving QUIT")
+            break
     connection.close()
     
 def threaded_client(connection,address):
-    global primesList
     while True:
         data = connection.recv(2048).decode()
-        print(f"Data received from client {address}: "+data)
         if(data == "QUIT"):
             print(f"Connection with client {address} closed on receiving QUIT")
             break
         cnt = int(data.strip())
         aliveCnt = surveyNodes()
+        if aliveCnt == 0:
+            connection.sendall(str.encode("No compute nodes available, please try another time"))
+            continue
+        print(f"Task, count {cnt} received from client {address}, distributing to {aliveCnt} nodes")
         cnt = (cnt+aliveCnt-1)//aliveCnt
         primes = []
         tasks = [Task(cnt) for i in range(aliveCnt)]

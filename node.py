@@ -15,17 +15,21 @@ def node():
     nodeSocket.send("NODE".encode())
     
     while True:
-        data = nodeSocket.recv(2048).decode()
-        if(data == "QUIT"):
+        try:
+            data = nodeSocket.recv(2048).decode()
+            if(data == "QUIT"):
+                break
+            if(data == "SURVERY"):
+                print("Surveyed by server")
+                nodeSocket.send("ALIVE".encode())
+                continue
+            primeCount = int(data.split(" ")[1])
+            print(f"Received task {primeCount}")
+            primes = findPrimes(primeCount)
+            print(f"Sending primes {primes} to server")
+            nodeSocket.send(str(primes).encode())
+        except KeyboardInterrupt:
+            print("Qutting")
+            nodeSocket.send("QUIT".encode())
             break
-        if(data == "SURVERY"):
-            nodeSocket.send("ALIVE".encode())
-            continue
-        primeCount = int(data.split(" ")[1])
-        print(f"Received task {primeCount}")
-        primes = findPrimes(primeCount)
-        print(f"Sending primes {primes} to server")
-        nodeSocket.send(str(primes).encode())
-        
-    
 node()
